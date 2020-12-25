@@ -14,6 +14,10 @@ To install just copy the `CoCo` folder into Sublime `Packages` folder (`~/Librar
   
 The Dignified Basic version uses a `.bad` extension and the traditional ASCII Basic an `.asc` one.  
   
+CoCo Sublime Tools  
+:-------------------------:  
+[![CoCo Sublime Tools in action](TitleVT.jpg)](https://youtu.be/aQfmmiJ9mzo)  
+  
 ## Build System  
   
 The Dignified code can be converted, tokenized and run straight from Sublime using **CoCo Basic Dignified**, **XRoar** and **decb** (a tokenizer).  
