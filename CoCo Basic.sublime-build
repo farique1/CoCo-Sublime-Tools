@@ -1,0 +1,15 @@
+{
+    "cmd": ["python3", "-u", "$packages/CoCo/CoCo Badig Build.py", "$file_path", "$file_name", "-classic"],
+    "selector": "source.cocobasic",
+    "working_dir": "$project_path",
+    "file_patterns": "*.bas",
+    "syntax": "CoCo Badig Build.sublime-syntax",
+    "variants": [
+
+	    { "name": "Tokenize only",
+	      "cmd": ["python3", "-u", "$packages/CoCo/CoCo Badig Build.py", "$file_path", "$file_name", "-classic", "-tokenize", "-convert"],
+	    },
+        { "name": "Tokenize and run",
+          "cmd": ["python3", "-u", "$packages/CoCo/CoCo Badig Build.py", "$file_path", "$file_name", "-classic", "-tokenize"],
+        }	]
+} 

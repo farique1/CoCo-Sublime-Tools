@@ -1,0 +1,379 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+#
+# See https://github.com/farique1/CoCo-Sublime-Tools
+# for updates and other CoCo Sublime tools
+
+
+author: Fred Rique (farique)
+url: https://github.com/farique1/MSX-Sublime-Tools
+comment: v1.3.2
+
+name: CoCo Basic Dignified
+file_extensions: bad
+scope: source.cocobasicdignified
+first_line_match: (?i)(^##BD:CoCo\s*$)
+
+# All case insensitive
+contexts:
+  prototype:
+  - include: 'Comments'
+
+  main:
+    # Double quotes
+    - match: '"'
+      push: double_quoted_string
+
+    # Badig Build configs
+    - match: (?i)(^##B(B|D):)((export_path|export_file|convert_only|arguments|override_config)(=)(.*$)|(coco\s*$))
+      captures:
+        1: comment.cocobasic
+        4: variable.parameter.cocobasic
+        5: comment.cocobasic
+        6: entity.name.class.cocobasic
+        7: variable.parameter.cocobasic
+
+    # Comment block
+    - match: (^\s*'')
+      push:
+        - meta_scope: comment.cocobasic
+        - match: (''\s*$)
+          pop: true
+
+    # Comment block ###
+    - match: (^\s*###)
+      push:
+        - meta_scope: comment.cocobasic
+        - match: (###\s*$)
+          pop: true
+
+    # Comment ##
+    - match: '(^|\s*)##.*$'
+      scope: comment.cocobasic
+
+    # Comment line ' and REM
+    - match: (?i:'|(^\s*|:\s*)rem)
+      push:
+        - match: '{\d+?}'
+        - meta_scope: comment.cocobasic
+        - match: '{(\w+?|@)}'
+          scope: entity.name.class.cocobasic
+        - match: (^\s*)((?i:endif))(?=\s*$)
+          captures:
+            2: invalid.deprecated.cocobasic
+        - match: '_\s*$\n'
+          scope: entity.name.tag.cocobasic
+        - match: '\:\s*$\n'
+          push:
+              - match: (^\s*)((?i:endif))(?=\s*$)
+                captures:
+                  2: invalid.deprecated.cocobasic
+              - match:  (^\s*)(\d+)\s*(\d*)
+                captures:
+                  2: invalid.deprecated.cocobasic
+                  3: invalid.deprecated.cocobasic
+              - match: '(?<!:)(?<!_)(?=$\n)'
+                pop: true
+        - match: '(?<!:)(?<!_)$\n'
+          pop: true
+
+    # Line toggle keep
+    - match: '^\s*keep\s+'
+      scope: entity.name.tag.cocobasic
+      push:
+        - match: '#\w+\s+'
+          scope: entity.name.tag.cocobasic
+        - match: '.+'
+          scope: invalid.cocobasic
+        - match: '$'
+          pop: true
+
+    # Line toggle lines
+    - match: '^\s*(#\w+)\s+'
+      scope: entity.name.tag.cocobasic
+      push:
+        - match: '\s*\d+'
+          scope: invalid.deprecated.cocobasic
+        - match: '(?=\D)'
+          pop: true
+
+    # DATA line highlights elements and comma only
+    - match: '\b(?i:data)(\b|(?=_))'
+      push: data_line
+      scope: keyword.control.cocobasic
+
+    # Labels with only numbers
+    - match: '{\d+?}'
+      scope: invalid.cocobasic
+
+    # Labels with valid characters
+    - match: '{(\w+?|@)}'
+      scope: entity.name.class.cocobasic
+
+    # Labels with everything else
+    - match: '{.+?}'
+      scope: invalid.cocobasic
+
+    # Loop labels with only numbers
+    - match: '^\s*(\d+?){'
+      scope: invalid.cocobasic
+
+    # Loop labels open
+    - match: '^\s*(\w+?){\s*$'
+      scope: entity.name.class.cocobasic
+
+    # Loop labels close
+    - match: '^\s*}\s*$'
+      scope: entity.name.class.cocobasic
+
+    # Round brackets balancing warning (only highlights missing closed)
+    - match: \(
+      push: brackets
+    - match: \)
+      scope: invalid.cocobasic
+
+    # Define [?@] - print at
+    - match: '\[\?@\]'
+      scope: keyword.control.cocobasic
+
+    # Define lines
+    - match: (?i:)(^\s*define(\s+|$))((,|\w+)|(?=\[|\s))
+      captures:
+        1: entity.name.tag.cocobasic
+        3: invalid.cocobasic
+      push:
+        - match: '(?<=\]),\s*,(?=\[)'
+          scope: invalid.cocobasic
+        - match: '\[[^\]\[#]+\]\s*(?=\[)'
+          scope: variable.parameter.cocobasic
+        - match: '##.*$'
+          scope: comment.cocobasic
+        - match: '\['
+          scope: variable.parameter.cocobasic
+          push:
+            # - meta_scope: keyword.control.cocobasic
+            - match: '\['
+              scope: variable.parameter.cocobasic
+              push:
+                # - meta_scope: support.function.cocobasic
+                - match: '\['
+                  scope: invalid.cocobasic
+                - match: '\]'
+                  scope: variable.parameter.cocobasic
+                  pop: true
+                - include: main
+            - match: '\]|(?=$\n|##)'
+              scope: variable.parameter.cocobasic
+              pop: true
+            - include: main
+        - match: '[^\]# \t]+\s*(?=\n|##)'
+          scope: invalid.cocobasic
+        - match: '[^, \t]+(?=,|\s*\[|##|$\n)'
+          scope: invalid.cocobasic
+        - match: (?=$|##)
+          pop: true
+        - include: main
+
+    # Define brackets
+    - match: '\[.+?\]'
+      scope: variable.parameter.cocobasic
+
+    # Line join character _
+    - match: '_(\s+(?=$|(?=##)))'
+      push: break_line
+      scope: entity.name.tag.cocobasic
+
+    # Special cases for defusr e usr
+    - match: \b(?i:def\s*usr(\d?))(\b|(?=_))
+      captures:
+        0: keyword.control.cocobasic
+        1: constant.numeric.cocobasic
+    - match: \b(?i:usr\s*(\d?)(?=\())(\b|(?=_))
+      captures:
+        0: support.function.cocobasic
+        1: constant.numeric.cocobasic
+
+    #def fn
+    - match: \b(?i:(fn)\s+(~?)(\w+)(\$|\%|\!|\#)?(?=\())
+      captures:
+        1: support.function.cocobasic
+        2: keyword.operator.cocobasic
+        3: support.function.cocobasic
+        4: keyword.operator.cocobasic
+
+    # Instructions (several are position and context sensitive)
+    - match: \b(?i:as(?=\s*#|\s*\w+\$)|audio|backup|circle|clear|cload|cloadm|close|cls|color|cont|copy|csave|csavem|data|del|dim|dir|dload|draw|drive|dski\$|dskini|dsko\$|edit|else|end|exec|field as|files|for|get|gosub|goto|if|input|kill|let|line|list|llist|load|loadm|lset|merge|motor|new|next|off|on|open|paint|pclear|pcls|pcopy|play|pmode|poke|preset|print(\s*tab(?=\())?|pset|put|read|rem|rename|renum|reset|restore|return|rset|run|save|savem|screen|set|skipf|sound|step|stop|then|to|troff|tron|unload|using|verify|write)(\b|(?=_))
+      scope: keyword.cocobasic
+
+    # Functions no $ (several are position and context sensitive)
+    - match: \b(?i:abs|asc|atn|cos|cvn|eof|exp|fix|free|instr|int|joystk|len|loc|lof|log|mem|peek|point|pos|ppoint|rnd|sgn|sin|sqr|tan|timer|usr|usrn|val|varptr)(\b|(?=_))
+      scope: support.function.cocobasic
+
+    # ? do not work with the \b on the instructions match
+    - match: '[\?]'
+      scope: keyword.cocobasic
+
+    # Functions $ (several are position and context sensitive)
+    - match: \b(?i:chr\$|hex\$|inkey\$|left\$|mid\$|mkn\$|right\$|str\$|string\$)
+      scope: support.function.cocobasic
+
+    # include
+    - match: (?i:^\s*include)\b
+      scope: entity.name.tag.cocobasic
+
+    # Endif if alone
+    - match: (?i:^\s*endif\s*$)
+      scope: keyword.cocobasic
+
+    # Endif if not alone nor on rem, quote, data
+    - match: (?i:endif)
+      scope: invalid.deprecated.cocobasic
+
+    # function definition
+    - match: (?i:)(^\s*func\s+)
+      scope: entity.name.tag.cocobasic
+
+    # function name
+    - match: (?i:)(\.\w+)(?=\()
+      scope: entity.name.class.cocobasic
+
+    # colon - instruction separator
+    - match: ':'
+      scope: comment.cocobasic
+
+    # @
+    - match: '(?<=print)\s*@'
+      scope: keyword.operator.cocobasic
+
+    # Separators
+    - match: '[.,;]'
+      scope: keyword.operator.cocobasic
+
+    # Operators signs
+    - match: (?i:\+|-|\*|/|\^|\\|=|<>|>=|<=|<|>)
+      scope: keyword.operator.cocobasic
+
+    # Operators names
+    - match: \b(?i:and|or|not)(\b|(?=_))
+      scope: keyword.operator.cocobasic
+
+    # Boolean type
+    - match: \b(?i:true|false)(\b|(?=_))
+      scope: constant.numeric.cocobasic
+
+    # Declare lines
+    - match: (?i:)(^\s*declare(\s+|$))((,)|(?=.|\s))
+      captures:
+        1: entity.name.tag.cocobasic
+        4: invalid.cocobasic
+      push:
+        # - meta_scope: constant.global.cocobasic
+        - match: '##.*$'
+          scope: comment.cocobasic
+        - match: '(?<=\W)\d+(?=\W)'
+          scope: invalid.cocobasic
+        - match: '(?<=\W)\w{0,2}(?=\W)'
+          scope: invalid.cocobasic
+        - match: \s*(\w+)((\:)[A-Za-z][A-Za-z0-9]?)?\s*(?=\n|,|##)
+          captures:
+            1: constant.global.cocobasic
+            2: variable.parameter.cocobasic
+            3: keyword.operator.cocobasic
+        - match: '[^,]+?(?=\n|,|##)'
+          scope: invalid.cocobasic
+        - match: ',\s*(?=\n|,|##)'
+          scope: invalid.cocobasic
+        - match: (?=$|##)
+          pop: true
+        - include: main
+
+    # Number at beginning of line
+    - match: (^\s*)(\d+|#)\s*(\d*)
+      captures:
+        2: invalid.deprecated.cocobasic
+        3: invalid.deprecated.cocobasic
+
+    # Numbers
+    - match: '(#?)\b([0-9]+[0-9]*)(\.?)([ed][+-])?(\b|(?=_))'
+      captures:
+        1: keyword.operator.cocobasic
+        2: constant.numeric.cocobasic
+        3: keyword.operator.cocobasic
+        4: keyword.operator.cocobasic
+
+    # Variables
+    - match: '(#?)([A-Za-z]\d*)([\$]?)'
+      captures:
+        1: keyword.operator.cocobasic
+        2: constant.global.cocobasic
+        3: keyword.operator.cocobasic
+
+    # Hex and octal numbers (bug if word after hex touching and beginning with a-f)
+    - match: '(&[hH])([0-9a-fA-F]+)|(&[oO])([0-7]+)'
+      captures:
+        1: keyword.operator.cocobasic
+        2: constant.numeric.cocobasic
+        3: keyword.operator.cocobasic
+        4: constant.numeric.cocobasic
+
+    # Declare indicator
+    - match: ~
+      scope: variable.parameter.cocobasic
+      push:
+        - match: \d+(?=\W)
+          scope: invalid.cocobasic
+        - match: \w{0,2}(?=\W)
+          scope: invalid.cocobasic
+        - match: (\b|(?=\W))
+          pop: true
+        - include: main
+
+  break_line:
+    - match: (^|\s*)\d+
+      scope: constant.numeric.cocobasic
+    - match: ((?=_)|\n)
+      pop: true
+    - include: main
+
+    # Quotes: show join line character _
+  double_quoted_string:
+    - meta_scope: string.cocobasic
+    - match: '_(\s+$)'
+      scope: entity.name.tag.cocobasic
+    - match: '"|[^_]$'
+      pop: true
+
+    # comment (##) stops the highlight, continue if _ added at the end.
+    # But _ MUST also be added before the ## so the lines can join
+  data_line:
+    - meta_scope: constant.global.cocobasic
+    - match: '"'
+      push:
+        - match: ':'
+          scope: constant.global.cocobasic
+        - match: '("|(?=\n))'
+          pop: true
+    - match: ','
+      scope: keyword.operator.cocobasic
+    - match: '(_)(\s+($|(##.*\n)))'
+      captures:
+        1: entity.name.tag.cocobasic
+        4: comment.cocobasic
+      push:
+        - match: $|(?=:)
+          pop: true
+        - include: data_line
+    - match: '(?<!\S)##.*'
+      scope: comment.cocobasic
+    - match: (^\s*)((?i:endif))(?=\s*$)
+      captures:
+        2: invalid.deprecated.cocobasic
+    - match: '$\n|(?=:)'
+      pop: true
+
+    # Round brackets
+  brackets:
+    - match: \)
+      pop: true
+    - include: main
